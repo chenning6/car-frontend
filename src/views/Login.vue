@@ -1,35 +1,68 @@
 <template>
   <div class="login-page">
     <div class="login-card">
-      <h2>{{ $t('login') }}</h2>
-      <el-tabs v-model="loginType" class="login-tabs">
-        <el-tab-pane label="用户名登录" name="username">
+      <div class="card-header">
+        <h2>欢迎回来</h2>
+        <p>登录您的账号继续</p>
+      </div>
+
+      <el-tabs v-model="loginType" class="login-tabs" stretch>
+        <el-tab-pane name="username">
+          <template #label>
+            <span class="tab-label">
+              <el-icon><User /></el-icon>
+              用户名登录
+            </span>
+          </template>
           <el-form :model="form" @submit.prevent="handleLogin">
             <el-form-item>
-              <el-input v-model="form.username" :placeholder="$t('username')" size="large" />
+              <el-input
+                v-model="form.username"
+                :placeholder="$t('username')"
+                size="large"
+                :prefix-icon="User"
+              />
             </el-form-item>
             <el-form-item>
-              <el-input v-model="form.password" type="password" :placeholder="$t('password')" size="large" />
+              <el-input
+                v-model="form.password"
+                type="password"
+                :placeholder="$t('password')"
+                size="large"
+                :prefix-icon="Lock"
+                show-password
+              />
             </el-form-item>
             <el-form-item>
               <div class="captcha-row">
-                <el-input v-model="form.captchaCode" :placeholder="$t('captcha')" size="large" style="flex: 1;" />
+                <el-input
+                  v-model="form.captchaCode"
+                  :placeholder="$t('captcha')"
+                  size="large"
+                  :prefix-icon="CircleClose"
+                />
                 <img :src="captchaImage" class="captcha-img" @click="refreshCaptcha" alt="验证码" />
               </div>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" size="large" :loading="loading" @click="handleLogin" style="width: 100%">
+              <el-button type="primary" size="large" :loading="loading" @click="handleLogin" class="login-btn">
                 {{ $t('login') }}
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
 
-        <el-tab-pane label="手机号登录" name="phone">
+        <el-tab-pane name="phone">
+          <template #label>
+            <span class="tab-label">
+              <el-icon><Iphone /></el-icon>
+              手机号登录
+            </span>
+          </template>
           <el-form :model="phoneForm" @submit.prevent="handlePhoneLogin">
             <el-form-item>
               <div class="phone-row">
-                <el-select v-model="phoneForm.countryCode" filterable placeholder="国家区号" size="large" style="width: 140px;">
+                <el-select v-model="phoneForm.countryCode" filterable placeholder="国家区号" size="large" class="country-select">
                   <el-option
                     v-for="country in countries"
                     :key="country.code"
@@ -37,32 +70,44 @@
                     :value="country.code"
                   />
                 </el-select>
-                <el-input v-model="phoneForm.phone" placeholder="手机号" size="large" style="flex: 1;" />
+                <el-input
+                  v-model="phoneForm.phone"
+                  placeholder="手机号"
+                  size="large"
+                  :prefix-icon="Iphone"
+                />
               </div>
             </el-form-item>
             <el-form-item>
               <div class="captcha-row">
-                <el-input v-model="phoneForm.code" placeholder="验证码" size="large" style="flex: 1;" />
+                <el-input
+                  v-model="phoneForm.code"
+                  placeholder="验证码"
+                  size="large"
+                  :prefix-icon="Message"
+                />
                 <el-button
                   size="large"
                   :disabled="countdown > 0"
                   @click="sendCaptcha"
                   class="send-btn"
                 >
-                  {{ countdown > 0 ? `${countdown}秒` : '发送验证码' }}
+                  {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
                 </el-button>
               </div>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" size="large" :loading="loading" @click="handlePhoneLogin" style="width: 100%">
+              <el-button type="primary" size="large" :loading="loading" @click="handlePhoneLogin" class="login-btn">
                 {{ $t('login') }}
               </el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
       </el-tabs>
-      <div class="links">
-        <router-link to="/register">{{ $t('register') }}</router-link>
+
+      <div class="card-footer">
+        <span>还没有账号？</span>
+        <router-link to="/register">立即注册</router-link>
       </div>
     </div>
   </div>
@@ -74,6 +119,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authApi, captchaApi } from '@/api'
 import { ElMessage } from 'element-plus'
+import { User, Lock, Iphone, Message, CircleClose } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -226,59 +272,172 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: -20px;
+  padding: 40px 20px;
 }
 
 .login-card {
   background: #fff;
   padding: 40px;
-  border-radius: 8px;
+  border-radius: 20px;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
 }
 
-.login-card h2 {
+.card-header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 32px;
 }
 
-.login-tabs :deep(.el-tabs__content) {
-  padding-top: 20px;
+.card-header h2 {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a2e;
+  margin-bottom: 8px;
 }
 
-.phone-row {
+.card-header p {
+  color: #666;
+  font-size: 14px;
+}
+
+.login-tabs :deep(.el-tabs__header) {
+  margin-bottom: 24px;
+}
+
+.login-tabs :deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background: #e8e8e8;
+}
+
+.login-tabs :deep(.el-tabs__item) {
+  font-size: 14px;
+  color: #999;
+  height: 50px;
+  line-height: 50px;
+}
+
+.login-tabs :deep(.el-tabs__item.is-active) {
+  color: #409eff;
+  font-weight: 500;
+}
+
+.login-tabs :deep(.el-tabs__active-bar) {
+  height: 3px;
+  background: linear-gradient(90deg, #409eff, #67c23a);
+  border-radius: 3px 3px 0 0;
+}
+
+.tab-label {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-label .el-icon {
+  font-size: 16px;
 }
 
 .captcha-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
 }
 
 .captcha-img {
   height: 40px;
+  width: 100px;
   cursor: pointer;
-  border-radius: 4px;
-  border: 1px solid #dcdfe6;
+  border-radius: 8px;
+  border: 1px solid #e8e8e8;
+  transition: all 0.3s;
 }
 
 .captcha-img:hover {
   border-color: #409eff;
+  transform: scale(1.02);
+}
+
+.phone-row {
+  display: flex;
+  gap: 12px;
+}
+
+.country-select {
+  width: 140px;
 }
 
 .send-btn {
-  min-width: 100px;
+  min-width: 120px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  color: #fff;
+  font-weight: 500;
 }
 
-.links {
+.send-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+}
+
+.send-btn:disabled {
+  background: #e8e8e8;
+  color: #999;
+}
+
+.login-btn {
+  width: 100%;
+  height: 48px;
+  font-size: 16px;
+  font-weight: 500;
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  border: none;
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.login-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(64, 158, 255, 0.4);
+}
+
+.card-footer {
   text-align: center;
-  margin-top: 16px;
+  margin-top: 24px;
+  color: #666;
+  font-size: 14px;
 }
 
-.links a {
+.card-footer a {
   color: #409eff;
   text-decoration: none;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.card-footer a:hover {
+  text-decoration: underline;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px #e8e8e8 inset;
+  padding: 4px 12px;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+:deep(.el-select .el-input__wrapper) {
+  border-radius: 10px;
+}
+
+:deep(.el-form-item) {
+  margin-bottom: 20px;
 }
 </style>

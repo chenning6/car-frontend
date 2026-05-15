@@ -297,19 +297,163 @@ async function handleSubmit() {
 </script>
 
 <style scoped>
-.post-create { max-width: 800px; margin: 0 auto; }
-.form-card { background: #fff; padding: 30px; border-radius: 8px; }
-.form-card h2 { margin-bottom: 24px; }
-.currency-tip { color: #909399; font-size: 12px; margin-left: 8px; }
-.image-section { display: flex; flex-direction: column; gap: 12px; }
-.uploaded-images { display: flex; flex-wrap: wrap; gap: 10px; }
-.image-preview { position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 2px solid #eee; flex-shrink: 0; }
-.image-preview:hover { border-color: #409eff; }
-.image-preview.is-cover { border-color: #67c23a; border-width: 3px; }
-.image-preview img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; }
-.image-actions { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: space-between; padding: 4px; opacity: 0; transition: opacity 0.3s; }
-.image-preview:hover .image-actions { opacity: 1; }
-.upload-tip { color: #999; font-size: 12px; }
-.preview-container { display: flex; align-items: center; justify-content: center; min-height: 300px; max-height: 70vh; }
-.preview-image { max-width: 100%; max-height: 70vh; object-fit: contain; }
+.post-create {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-card {
+  background: #fff;
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+.form-card h2 {
+  margin-bottom: 24px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.currency-tip {
+  color: #909399;
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.image-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uploaded-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.image-preview {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #eee;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.image-preview:hover {
+  border-color: #409eff;
+  transform: scale(1.02);
+}
+
+.image-preview.is-cover {
+  border-color: #67c23a;
+  border-width: 3px;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  cursor: pointer;
+}
+
+.image-actions {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: space-between;
+  padding: 4px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.image-preview:hover .image-actions {
+  opacity: 1;
+}
+
+.upload-tip {
+  color: #999;
+  font-size: 12px;
+}
+
+.preview-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  max-height: 70vh;
+}
+
+.preview-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+:deep(.el-input__wrapper),
+:deep(.el-textarea__inner),
+:deep(.el-input-number) {
+  border-radius: 10px;
+}
+
+:deep(.el-input__wrapper) {
+  box-shadow: 0 0 0 1px #e8e8e8 inset;
+  padding: 4px 12px;
+  transition: all 0.3s;
+}
+
+:deep(.el-input__wrapper:hover) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 0 0 1px #409eff inset;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #333;
+}
+
+:deep(.el-radio-group) {
+  display: flex;
+  gap: 16px;
+}
+
+:deep(.el-radio__label) {
+  font-weight: 500;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  border: none;
+  border-radius: 12px;
+  height: 44px;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+:deep(.el-button--primary:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(64, 158, 255, 0.4);
+}
+
+:deep(.el-upload--picture-card) {
+  border-radius: 12px;
+  border: 2px dashed #dcdfe6;
+  transition: all 0.3s;
+}
+
+:deep(.el-upload--picture-card:hover) {
+  border-color: #409eff;
+  background: rgba(64, 158, 255, 0.05);
+}
 </style>

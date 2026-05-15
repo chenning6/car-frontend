@@ -2,36 +2,36 @@
   <div class="profile-page">
     <div class="profile-card">
       <h2>{{ $t('profile') }}</h2>
-      
+
       <div class="user-info" v-if="authStore.user">
         <div class="info-item">
           <span class="label">{{ $t('username') }}:</span>
           <span>{{ authStore.user.username }}</span>
         </div>
         <div class="info-item">
-          <span class="label">Email:</span>
-          <span>{{ authStore.user.email }}</span>
+          <span class="label">{{ $t('email') }}:</span>
+          <span>{{ authStore.user.email || '-' }}</span>
         </div>
       </div>
-      
+
       <div class="my-posts">
-        <h3>My Posts</h3>
+        <h3>{{ $t('myPostsTitle') }}</h3>
         <div class="post-list" v-if="myPosts.length">
           <div class="post-item" v-for="post in myPosts" :key="post.id">
             <div class="post-title">{{ post.title }}</div>
             <div class="post-status">
               <el-tag :type="post.status === 'approved' ? 'success' : post.status === 'rejected' ? 'danger' : 'warning'">
-                {{ post.status }}
+                {{ $t(post.status) }}
               </el-tag>
             </div>
             <div class="post-actions">
-              <el-button size="small" @click="router.push('/post/' + post.id)">View</el-button>
+              <el-button size="small" @click="router.push('/post/' + post.id)">{{ $t('view') }}</el-button>
             </div>
           </div>
         </div>
-        <el-empty v-else description="No posts yet" />
+        <el-empty v-else :description="$t('noPostsYet')" />
       </div>
-      
+
       <div class="actions">
         <el-button type="danger" @click="handleLogout">{{ $t('logout') }}</el-button>
       </div>
