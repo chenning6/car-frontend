@@ -83,4 +83,14 @@ export const commentApi = {
     api.delete(`/comments/${id}`),
 }
 
+export const userApi = {
+  getProfile: () => api.get('/user/profile'),
+  updateProfile: (data: { nickname?: string; wechat?: string }) =>
+    api.put('/user/profile', data),
+  changePassword: (data: { oldPassword: string; newPassword: string; confirmPassword: string }) =>
+    api.post('/user/password', data),
+  changePhone: (data: { countryCode: string; phone: string; code: string }) =>
+    api.post('/user/phone', data),
+}
+
 export default api
