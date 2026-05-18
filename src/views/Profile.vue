@@ -49,7 +49,7 @@
       </div>
     </div>
 
-    <el-dialog v-model="showPasswordDialog" title="$t('changePassword')" width="400px">
+    <el-dialog v-model="showPasswordDialog" :title="$t('changePassword')" width="400px">
       <el-form :model="passwordForm" label-width="80px">
         <el-form-item :label="$t('oldPassword')">
           <el-input v-model="passwordForm.oldPassword" type="password" show-password />
@@ -67,12 +67,12 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showPhoneDialog" title="$t('changePhone')" width="400px">
+    <el-dialog v-model="showPhoneDialog" :title="$t('changePhone')" class="phone-dialog">
       <el-form :model="phoneForm" label-width="80px">
         <el-form-item :label="$t('countryCode')">
           <el-select v-model="phoneForm.countryCode" filterable style="width: 100%">
             <el-option
-              v-for="country in countries"
+              v-for="country in translatedCountries"
               :key="country.code"
               :label="`+${country.code} ${country.name}`"
               :value="country.code"
@@ -104,14 +104,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import { userApi, authApi } from '@/api'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t, locale } = useI18n()
+
+const countryNameMap: Record<string, Record<string, string>> = {
+  '86': { 'zh-CN': '中国', 'en': 'China', 'mn': 'Хятад' },
+  '1': { 'zh-CN': '美国/加拿大', 'en': 'USA/Canada', 'mn': 'Америк/Канад' },
+  '44': { 'zh-CN': '英国', 'en': 'UK', 'mn': 'Англи' },
+  '49': { 'zh-CN': '德国', 'en': 'Germany', 'mn': 'Герман' },
+  '33': { 'zh-CN': '法国', 'en': 'France', 'mn': 'Франц' },
+  '81': { 'zh-CN': '日本', 'en': 'Japan', 'mn': 'Япон' },
+  '82': { 'zh-CN': '韩国', 'en': 'Korea', 'mn': 'Солонгос' },
+  '91': { 'zh-CN': '印度', 'en': 'India', 'mn': 'Энэтхэг' },
+  '60': { 'zh-CN': '马来西亚', 'en': 'Malaysia', 'mn': 'Малайз' },
+  '62': { 'zh-CN': '印度尼西亚', 'en': 'Indonesia', 'mn': 'Индонези' },
+  '66': { 'zh-CN': '泰国', 'en': 'Thailand', 'mn': 'Тайланд' },
+  '84': { 'zh-CN': '越南', 'en': 'Vietnam', 'mn': 'Вьетнам' },
+  '976': { 'zh-CN': '蒙古国', 'en': 'Mongolia', 'mn': 'Монгол' },
+}
+
+const translatedCountries = computed(() => {
+  return countries.value.map(c => ({
+    ...c,
+    name: countryNameMap[c.code]?.[locale.value] || c.name
+  }))
+})
 
 const userInfo = ref<any>(null)
 const saving = ref(false)
@@ -173,10 +198,12 @@ async function saveProfile() {
       wechat: form.wechat,
     })
     if (res.data?.code === 200) {
-      ElMessage.success('profileSaved')
+      ElMessage.success(t('profileSaved'))
+    } else {
+      ElMessage.error(res.data?.message || t('profileSaved'))
     }
   } catch (error: any) {
-    ElMessage.error(error || '保存失败')
+    ElMessage.error(error || t('profileSaved'))
   } finally {
     saving.value = false
   }
@@ -184,11 +211,11 @@ async function saveProfile() {
 
 async function changePassword() {
   if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-    ElMessage.warning('请填写完整')
+    ElMessage.warning(t('fillAll'))
     return
   }
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-    ElMessage.warning('两次密码不一致')
+    ElMessage.warning(t('passwordMismatch'))
     return
   }
 
@@ -196,16 +223,16 @@ async function changePassword() {
   try {
     const res = await userApi.changePassword(passwordForm)
     if (res.data?.code === 200) {
-      ElMessage.success('passwordChanged')
+      ElMessage.success(t('passwordChanged'))
       showPasswordDialog.value = false
       passwordForm.oldPassword = ''
       passwordForm.newPassword = ''
       passwordForm.confirmPassword = ''
     } else {
-      ElMessage.error(res.data?.message || 'passwordError')
+      ElMessage.error(res.data?.message || t('passwordError'))
     }
   } catch (error: any) {
-    ElMessage.error(error || 'passwordError')
+    ElMessage.error(error || t('passwordError'))
   } finally {
     changingPwd.value = false
   }
@@ -213,7 +240,7 @@ async function changePassword() {
 
 async function sendCaptcha() {
   if (!phoneForm.phone) {
-    ElMessage.warning('请输入手机号')
+    ElMessage.warning(t('enterPhone'))
     return
   }
 
@@ -223,7 +250,7 @@ async function sendCaptcha() {
       phone: phoneForm.phone,
       type: 3,
     })
-    ElMessage.success('验证码已发送')
+    ElMessage.success(t('codeSent'))
     countdown.value = 60
     countdownTimer = window.setInterval(() => {
       countdown.value--
@@ -233,13 +260,13 @@ async function sendCaptcha() {
       }
     }, 1000)
   } catch (error: any) {
-    ElMessage.error(error?.message || '发送失败')
+    ElMessage.error(error?.message || t('sendFailed'))
   }
 }
 
 async function changePhone() {
   if (!phoneForm.phone || !phoneForm.code) {
-    ElMessage.warning('请填写手机号和验证码')
+    ElMessage.warning(t('fillPhoneCaptcha'))
     return
   }
 
@@ -247,15 +274,15 @@ async function changePhone() {
   try {
     const res = await userApi.changePhone(phoneForm)
     if (res.data?.code === 200) {
-      ElMessage.success('phoneChanged')
+      ElMessage.success(t('phoneChanged'))
       showPhoneDialog.value = false
       phoneForm.phone = ''
       phoneForm.code = ''
     } else {
-      ElMessage.error(res.data?.message || '更换失败')
+      ElMessage.error(res.data?.message || t('phoneChangeFailed'))
     }
   } catch (error: any) {
-    ElMessage.error(error || '更换失败')
+    ElMessage.error(error || t('phoneChangeFailed'))
   } finally {
     changingPhone.value = false
   }
@@ -362,11 +389,105 @@ onMounted(() => {
   border-radius: 10px;
 }
 
-:deep(.el-dialog) {
-  border-radius: 16px;
-}
+  :deep(.el-dialog) {
+    border-radius: 16px;
+  }
+
+  :deep(.phone-dialog) {
+    .el-dialog__body {
+      padding: 16px 12px;
+    }
+    .el-form-item {
+      margin-bottom: 12px;
+    }
+    .el-select {
+      width: 100%;
+    }
+  }
 
 :deep(.el-form-item__label) {
   font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 0 12px;
+  }
+
+  .profile-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .profile-card h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  .user-info {
+    text-align: left;
+  }
+
+  .account-settings h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  :deep(.el-form) {
+    .el-form-item {
+      display: block;
+      margin-bottom: 16px;
+    }
+    .el-form-item__label {
+      float: none;
+      text-align: left;
+      margin-bottom: 8px;
+    }
+    .el-form-item__content {
+      margin-left: 0 !important;
+    }
+    .el-input__wrapper {
+      width: 100%;
+    }
+    .el-select {
+      width: 100%;
+    }
+  }
+
+  .button-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .button-group .el-button {
+    width: 100%;
+  }
+
+  :deep(.el-dialog) {
+    width: 90% !important;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 16px;
+  }
+
+  .captcha-row {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .captcha-row .el-input {
+    width: 100%;
+  }
+
+  .captcha-row .send-btn {
+    width: 100%;
+  }
 }
 </style>

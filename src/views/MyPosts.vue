@@ -122,9 +122,7 @@ function formatPrice(price: number) {
 
 function getImageUrl(url: string) {
   if (!url) return '/placeholder.jpg'
-  if (url.startsWith('http')) return url
-  const filename = url.split('/').pop()
-  return 'http://localhost:8080/api/upload/uploads/' + filename
+  return url
 }
 
 function fixImage(e: Event) {

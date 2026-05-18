@@ -46,7 +46,7 @@
     </main>
     
     <footer class="footer">
-      <p>© 2024 车辆交易平台</p>
+      <p>© 中国汽车联盟</p>
     </footer>
   </div>
 </template>
@@ -215,5 +215,85 @@ body {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    padding: 8px 12px;
+    height: auto;
+    justify-content: space-between;
+  }
+
+  .logo-section {
+    gap: 6px;
+    max-width: 45%;
+  }
+
+  .logo-section .logo {
+    font-size: 24px;
+  }
+
+  .company-name {
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .company-name .name {
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  .company-name .slogan {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+
+  .nav {
+    gap: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .nav-link {
+    padding: 4px 6px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .lang-btn {
+    font-size: 12px;
+    padding: 4px 6px;
+  }
+
+  .main {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .header-content {
+    padding: 6px 10px;
+  }
+
+  .logo-section .logo {
+    font-size: 22px;
+  }
+
+  .company-name .name {
+    font-size: 12px;
+  }
+
+  .company-name .slogan {
+    font-size: 9px;
+  }
+
+  .nav-link {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .lang-btn {
+    font-size: 11px;
+    padding: 4px 6px;
+  }
 }
 </style>

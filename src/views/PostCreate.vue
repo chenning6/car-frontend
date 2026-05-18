@@ -125,7 +125,7 @@ const editId = ref<number | null>(null)
 const loading = ref(false)
 const showPreview = ref(false)
 const previewUrl = ref('')
-const uploadUrl = 'http://localhost:8080/api/upload/image'
+const uploadUrl = '/api/upload/image'
 
 interface UploadImage {
   url: string;
@@ -167,10 +167,7 @@ function handleUploadSuccess(response: any, file: any) {
   try {
     let data = typeof response === 'string' ? JSON.parse(response) : response
     if (data.code === 200 && data.data) {
-      // 后端返回 /uploads/xxx，拼接成 /api/upload/uploads/xxx
-      // 先分割再拼接，避免 /uploads/uploads
-      const filename = data.data.url.split('/').pop()
-      const fullUrl = 'http://localhost:8080/api/upload/uploads/' + filename
+      const fullUrl = getImageUrl(data.data.url)
       form.images.push({
         url: fullUrl,
         filename: data.data.filename,
@@ -237,9 +234,7 @@ async function loadPost(id: number) {
 
 function getImageUrl(url: string) {
   if (!url) return '/placeholder.jpg'
-  if (url.startsWith('http')) return url
-  const filename = url.split('/').pop()
-  return 'http://localhost:8080/api/upload/uploads/' + filename
+  return url
 }
 
 onMounted(() => {
@@ -271,7 +266,7 @@ async function handleSubmit() {
     const postData = {
       ...form,
       images: form.images.map((img, i) => ({
-        imageUrl: img.url.replace('http://localhost:8080', ''),
+        imageUrl: img.url.replace(/^http:\/\/[\d.]+:\d+/, ''),
         isCover: img.isCover,
         sortOrder: i,
       })),
@@ -455,5 +450,55 @@ async function handleSubmit() {
 :deep(.el-upload--picture-card:hover) {
   border-color: #409eff;
   background: rgba(64, 158, 255, 0.05);
+}
+
+@media (max-width: 768px) {
+  .post-create {
+    padding: 0 12px;
+  }
+
+  .form-card {
+    padding: 16px;
+  }
+
+  .form-card h2 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+
+  .uploaded-images {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .image-preview {
+    width: 100%;
+    height: 80px;
+  }
+
+  :deep(.el-form-item) {
+    display: block;
+  }
+
+  :deep(.el-form-item__label) {
+    text-align: left;
+    float: none;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+    display: block;
+  }
+
+  :deep(.el-input),
+  :deep(.el-input-number),
+  :deep(.el-textarea),
+  :deep(.el-select) {
+    width: 100%;
+  }
 }
 </style>

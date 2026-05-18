@@ -108,10 +108,7 @@ function formatPrice(price: number) {
 
 function getImageUrl(url: string) {
   if (!url) return '/placeholder.jpg'
-  if (url.startsWith('http')) return url
-  // /uploads/xxx -> /api/upload/uploads/xxx
-  const filename = url.split('/').pop()
-  return 'http://localhost:8080/api/upload/uploads/' + filename
+  return url
 }
 
 function fixImage(e: Event) {
@@ -263,5 +260,31 @@ onMounted(() => {
   margin-top: 24px;
   justify-content: center;
   display: flex;
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .filter-bar .el-input {
+    width: 100% !important;
+  }
+
+  .filter-bar :deep(.el-radio-group) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .filter-bar :deep(.el-radio-button__inner) {
+    padding: 8px 12px;
+  }
+
+  .post-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 </style>
