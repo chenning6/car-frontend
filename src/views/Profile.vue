@@ -8,10 +8,6 @@
           <span class="label">{{ $t('username') }}:</span>
           <span>{{ userInfo.username }}</span>
         </div>
-        <div class="info-item">
-          <span class="label">{{ $t('email') }}:</span>
-          <span>{{ userInfo.email || '-' }}</span>
-        </div>
       </div>
 
       <el-divider />
@@ -19,35 +15,42 @@
       <div class="account-settings">
         <h3>{{ $t('accountSettings') }}</h3>
 
-        <el-form label-width="100px" class="settings-form">
-          <el-form-item :label="$t('nickname')">
-            <el-input v-model="form.nickname" :placeholder="$t('nickname')" />
-          </el-form-item>
-
-          <el-form-item :label="$t('wechat')">
-            <el-input v-model="form.wechat" :placeholder="$t('wechat')" />
-          </el-form-item>
-
-          <el-form-item label="">
-            <div class="button-group">
-              <el-button type="primary" @click="saveProfile" :loading="saving">
-                {{ $t('save') }}
-              </el-button>
-              <el-button @click="showPasswordDialog = true">
-                {{ $t('changePassword') }}
-              </el-button>
-              <el-button @click="showPhoneDialog = true">
-                {{ $t('changePhone') }}
-              </el-button>
+        <div class="settings-list">
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-label">{{ $t('nickname') }}</span>
+              <span class="setting-value">{{ userInfo?.nickname || '-' }}</span>
             </div>
-          </el-form-item>
-        </el-form>
+            <el-button size="small" @click="showNicknameDialog = true">{{ $t('edit') }}</el-button>
+          </div>
+        </div>
+
+        <div class="button-group">
+          <el-button @click="showPasswordDialog = true">
+            {{ $t('changePassword') }}
+          </el-button>
+          <el-button @click="showPhoneDialog = true">
+            {{ $t('changePhone') }}
+          </el-button>
+        </div>
       </div>
 
       <div class="actions">
         <el-button type="danger" @click="handleLogout">{{ $t('logout') }}</el-button>
       </div>
     </div>
+
+    <el-dialog v-model="showNicknameDialog" :title="$t('editNickname')" width="400px">
+      <el-form>
+        <el-form-item :label="$t('nickname')">
+          <el-input v-model="nicknameForm.nickname" :placeholder="$t('nickname')" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showNicknameDialog = false">{{ $t('cancel') }}</el-button>
+        <el-button type="primary" @click="saveNickname" :loading="savingNickname">{{ $t('save') }}</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="showPasswordDialog" :title="$t('changePassword')" width="400px">
       <el-form :model="passwordForm" label-width="80px">
@@ -141,9 +144,10 @@ const translatedCountries = computed(() => {
 const userInfo = ref<any>(null)
 const saving = ref(false)
 
-const form = reactive({
+const showNicknameDialog = ref(false)
+const savingNickname = ref(false)
+const nicknameForm = reactive({
   nickname: '',
-  wechat: '',
 })
 
 const showPasswordDialog = ref(false)
@@ -171,8 +175,7 @@ async function loadProfile() {
     const res = await userApi.getProfile()
     if (res.data?.code === 200) {
       userInfo.value = res.data.data
-      form.nickname = userInfo.value.nickname || ''
-      form.wechat = userInfo.value.wechat || ''
+      nicknameForm.nickname = userInfo.value.nickname || ''
     }
   } catch (error) {
     console.error(error)
@@ -190,22 +193,23 @@ async function loadCountries() {
   }
 }
 
-async function saveProfile() {
-  saving.value = true
+async function saveNickname() {
+  savingNickname.value = true
   try {
     const res = await userApi.updateProfile({
-      nickname: form.nickname,
-      wechat: form.wechat,
+      nickname: nicknameForm.nickname,
     })
     if (res.data?.code === 200) {
       ElMessage.success(t('profileSaved'))
+      showNicknameDialog.value = false
+      loadProfile()
     } else {
       ElMessage.error(res.data?.message || t('profileSaved'))
     }
   } catch (error: any) {
     ElMessage.error(error || t('profileSaved'))
   } finally {
-    saving.value = false
+    savingNickname.value = false
   }
 }
 
@@ -345,6 +349,38 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 20px;
+  color: #333;
+}
+
+.settings-list {
+  margin-bottom: 20px;
+}
+
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+}
+
+.setting-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.setting-label {
+  font-size: 14px;
+  color: #999;
+}
+
+.setting-value {
+  font-size: 15px;
   color: #333;
 }
 

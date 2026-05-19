@@ -234,7 +234,8 @@ async function loadPost(id: number) {
 
 function getImageUrl(url: string) {
   if (!url) return '/placeholder.jpg'
-  return url
+  if (url.startsWith('http')) return url
+  return '/api' + url
 }
 
 onMounted(() => {
@@ -499,6 +500,21 @@ async function handleSubmit() {
   :deep(.el-textarea),
   :deep(.el-select) {
     width: 100%;
+  }
+
+  :deep(.el-form) {
+    width: 100%;
+  }
+
+  :deep(.el-form-item) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  :deep(.el-radio-group) {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
   }
 }
 </style>
