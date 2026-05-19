@@ -2,44 +2,53 @@
   <div class="login-page">
     <div class="login-card">
       <div class="card-header">
-        <h2>创建账号</h2>
-        <p>填写信息完成注册</p>
+        <h2>{{ $t('createAccount') }}</h2>
+        <p>{{ $t('registerSubtitle') }}</p>
       </div>
 
-      <el-form :model="form" @submit.prevent="handleRegister">
-        <el-form-item>
+      <el-form :model="form" :rules="rules" ref="formRef" @submit.prevent="handleRegister">
+<el-form-item>
           <el-input
             v-model="form.username"
-            placeholder="用户名"
+            :placeholder="$t('username')"
             size="large"
             :prefix-icon="User"
           />
+          <div class="field-tip" v-if="form.username && usernameError">
+            {{ usernameError }}
+          </div>
         </el-form-item>
         <el-form-item>
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="密码"
+            :placeholder="$t('password')"
             size="large"
             :prefix-icon="Lock"
             show-password
           />
+          <div class="field-tip" v-if="form.password && passwordError">
+            {{ passwordError }}
+          </div>
         </el-form-item>
         <el-form-item>
           <el-input
             v-model="form.confirmPassword"
             type="password"
-            placeholder="确认密码"
+            :placeholder="$t('confirmPassword')"
             size="large"
             :prefix-icon="Lock"
             show-password
           />
+          <div class="field-tip" v-if="form.confirmPassword && confirmPasswordError">
+            {{ confirmPasswordError }}
+          </div>
         </el-form-item>
         <el-form-item>
           <div class="captcha-row">
             <el-input
               v-model="form.captchaCode"
-              placeholder="图形验证码"
+              :placeholder="$t('captcha')"
               size="large"
               :prefix-icon="CircleClose"
             />
@@ -48,14 +57,14 @@
         </el-form-item>
 
         <el-divider content-position="center">
-          <span class="divider-text">可选：绑定手机号</span>
+          <span class="divider-text">{{ $t('bindPhone') }}</span>
         </el-divider>
 
         <el-form-item>
           <div class="phone-row">
-            <el-select v-model="form.countryCode" filterable placeholder="国家区号" size="large" class="country-select">
+            <el-select v-model="form.countryCode" filterable :placeholder="$t('countryCode')" size="large" class="country-select">
               <el-option
-                v-for="country in countries"
+                v-for="country in translatedCountries"
                 :key="country.code"
                 :label="`+${country.code} ${country.name}`"
                 :value="country.code"
@@ -63,7 +72,7 @@
             </el-select>
             <el-input
               v-model="form.phone"
-              placeholder="手机号（可选）"
+              :placeholder="$t('phoneOptional')"
               size="large"
               :prefix-icon="Iphone"
             />
@@ -74,44 +83,78 @@
           <div class="captcha-row">
             <el-input
               v-model="form.phoneCode"
-              placeholder="手机验证码"
+              :placeholder="$t('phoneCode')"
               size="large"
               :prefix-icon="Message"
             />
             <el-button
               size="large"
-              :disabled="countdown > 0"
+              :disabled="countdown > 0 || !form.phone"
               @click="sendCaptcha"
               class="send-btn"
             >
-              {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
+              {{ countdown > 0 ? `${countdown}s` : $t('getCode') }}
             </el-button>
           </div>
         </el-form-item>
 
         <el-form-item>
-          <el-button type="primary" size="large" :loading="loading" @click="handleRegister" class="login-btn">
+          <el-button 
+            type="primary" 
+            size="large" 
+            :loading="loading" 
+            @click="handleRegister" 
+            class="login-btn"
+            :disabled="!isFormValid"
+          >
             {{ $t('register') }}
           </el-button>
         </el-form-item>
       </el-form>
 
       <div class="card-footer">
-        <span>已有账号？</span>
-        <router-link to="/login">立即登录</router-link>
+        <span>{{ $t('haveAccount') }}</span>
+        <router-link to="/login">{{ $t('loginNow') }}</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
+import type { FormInstance, FormRules } from 'element-plus'
 import { authApi, captchaApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Iphone, Message, CircleClose } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const { locale } = useI18n()
+const formRef = ref<FormInstance>()
+
+const countryNameMap: Record<string, Record<string, string>> = {
+  '86': { 'zh-CN': '中国', 'en': 'China', 'mn': 'Хятад' },
+  '1': { 'zh-CN': '美国/加拿大', 'en': 'USA/Canada', 'mn': 'Америк/Канад' },
+  '44': { 'zh-CN': '英国', 'en': 'UK', 'mn': 'Англи' },
+  '49': { 'zh-CN': '德国', 'en': 'Germany', 'mn': 'Герман' },
+  '33': { 'zh-CN': '法国', 'en': 'France', 'mn': 'Франц' },
+  '81': { 'zh-CN': '日本', 'en': 'Japan', 'mn': 'Япон' },
+  '82': { 'zh-CN': '韩国', 'en': 'Korea', 'mn': 'Солонгос' },
+  '91': { 'zh-CN': '印度', 'en': 'India', 'mn': 'Энэтхэг' },
+  '60': { 'zh-CN': '马来西亚', 'en': 'Malaysia', 'mn': 'Малайз' },
+  '62': { 'zh-CN': '印度尼西亚', 'en': 'Indonesia', 'mn': 'Индонези' },
+  '66': { 'zh-CN': '泰国', 'en': 'Thailand', 'mn': 'Тайланд' },
+  '84': { 'zh-CN': '越南', 'en': 'Vietnam', 'mn': 'Вьетнам' },
+  '976': { 'zh-CN': '蒙古国', 'en': 'Mongolia', 'mn': 'Монгол' },
+}
+
+const translatedCountries = computed(() => {
+  return countries.value.map(c => ({
+    ...c,
+    name: countryNameMap[c.code]?.[locale.value] || c.name
+  }))
+})
 
 const form = reactive({
   username: '',
@@ -122,6 +165,47 @@ const form = reactive({
   phoneCode: '',
   captchaId: '',
   captchaCode: '',
+})
+
+const rules: FormRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { pattern: /^\d+$/, message: '用户名不能是纯数字', trigger: 'blur' },
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度6-20位', trigger: 'blur' },
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认密码', trigger: 'blur' },
+  ],
+}
+
+const isFormValid = computed(() => {
+  return form.username && 
+    !/^\d+$/.test(form.username) && 
+    form.password && 
+    form.password.length >= 6 && 
+    form.password === form.confirmPassword && 
+    form.captchaCode
+})
+
+const usernameError = computed(() => {
+  if (!form.username) return ''
+  if (/^\d+$/.test(form.username)) return '用户名不能是纯数字'
+  return ''
+})
+
+const passwordError = computed(() => {
+  if (!form.password) return ''
+  if (form.password.length > 0 && form.password.length < 6) return '密码长度至少6位'
+  return ''
+})
+
+const confirmPasswordError = computed(() => {
+  if (!form.confirmPassword) return ''
+  if (form.password !== form.confirmPassword) return '两次输入的密码不一致'
+  return ''
 })
 
 const countries = ref<{code: string; name: string; dialCode: string}[]>([])
@@ -275,6 +359,12 @@ onMounted(() => {
 .card-header p {
   color: #666;
   font-size: 14px;
+}
+
+.field-tip {
+  color: #f56c6c;
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 .captcha-row {

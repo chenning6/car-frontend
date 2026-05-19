@@ -2,8 +2,8 @@
   <div class="login-page">
     <div class="login-card">
       <div class="card-header">
-        <h2>欢迎回来</h2>
-        <p>登录您的账号继续</p>
+        <h2>{{ $t('welcomeBack') }}</h2>
+        <p>{{ $t('loginSubtitle') }}</p>
       </div>
 
       <el-tabs v-model="loginType" class="login-tabs" stretch>
@@ -11,7 +11,7 @@
           <template #label>
             <span class="tab-label">
               <el-icon><User /></el-icon>
-              用户名登录
+              {{ $t('usernameLogin') }}
             </span>
           </template>
           <el-form :model="form" @submit.prevent="handleLogin">
@@ -56,15 +56,15 @@
           <template #label>
             <span class="tab-label">
               <el-icon><Iphone /></el-icon>
-              手机号登录
+              {{ $t('phoneLogin') }}
             </span>
           </template>
           <el-form :model="phoneForm" @submit.prevent="handlePhoneLogin">
             <el-form-item>
               <div class="phone-row">
-                <el-select v-model="phoneForm.countryCode" filterable placeholder="国家区号" size="large" class="country-select">
+                <el-select v-model="phoneForm.countryCode" filterable :placeholder="$t('countryCode')" size="large" class="country-select">
                   <el-option
-                    v-for="country in countries"
+                    v-for="country in translatedCountries"
                     :key="country.code"
                     :label="`+${country.code} ${country.name}`"
                     :value="country.code"
@@ -72,7 +72,7 @@
                 </el-select>
                 <el-input
                   v-model="phoneForm.phone"
-                  placeholder="手机号"
+                  :placeholder="$t('phoneNumber')"
                   size="large"
                   :prefix-icon="Iphone"
                 />
@@ -82,7 +82,7 @@
               <div class="captcha-row">
                 <el-input
                   v-model="phoneForm.code"
-                  placeholder="验证码"
+                  :placeholder="$t('verificationCode')"
                   size="large"
                   :prefix-icon="Message"
                 />
@@ -92,7 +92,7 @@
                   @click="sendCaptcha"
                   class="send-btn"
                 >
-                  {{ countdown > 0 ? `${countdown}s` : '获取验证码' }}
+                  {{ countdown > 0 ? `${countdown}s` : $t('getCode') }}
                 </el-button>
               </div>
             </el-form-item>
@@ -106,23 +106,48 @@
       </el-tabs>
 
       <div class="card-footer">
-        <span>还没有账号？</span>
-        <router-link to="/register">立即注册</router-link>
+        <span>{{ $t('noAccount') }}</span>
+        <router-link to="/register">{{ $t('registerNow') }}</router-link>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted } from 'vue'
+import { reactive, ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import { authApi, captchaApi } from '@/api'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Iphone, Message, CircleClose } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { locale } = useI18n()
+
+const countryNameMap: Record<string, Record<string, string>> = {
+  '86': { 'zh-CN': '中国', 'en': 'China', 'mn': 'Хятад' },
+  '1': { 'zh-CN': '美国/加拿大', 'en': 'USA/Canada', 'mn': 'Америк/Канад' },
+  '44': { 'zh-CN': '英国', 'en': 'UK', 'mn': 'Англи' },
+  '49': { 'zh-CN': '德国', 'en': 'Germany', 'mn': 'Герман' },
+  '33': { 'zh-CN': '法国', 'en': 'France', 'mn': 'Франц' },
+  '81': { 'zh-CN': '日本', 'en': 'Japan', 'mn': 'Япон' },
+  '82': { 'zh-CN': '韩国', 'en': 'Korea', 'mn': 'Солонгос' },
+  '91': { 'zh-CN': '印度', 'en': 'India', 'mn': 'Энэтхэг' },
+  '60': { 'zh-CN': '马来西亚', 'en': 'Malaysia', 'mn': 'Малайз' },
+  '62': { 'zh-CN': '印度尼西亚', 'en': 'Indonesia', 'mn': 'Индонези' },
+  '66': { 'zh-CN': '泰国', 'en': 'Thailand', 'mn': 'Тайланд' },
+  '84': { 'zh-CN': '越南', 'en': 'Vietnam', 'mn': 'Вьетнам' },
+  '976': { 'zh-CN': '蒙古国', 'en': 'Mongolia', 'mn': 'Монгол' },
+}
+
+const translatedCountries = computed(() => {
+  return countries.value.map(c => ({
+    ...c,
+    name: countryNameMap[c.code]?.[locale.value] || c.name
+  }))
+})
 
 const loginType = ref('username')
 
@@ -188,7 +213,6 @@ async function handleLogin() {
     })
     if (res.data?.access) {
       authStore.login(res.data.data, res.data.access)
-      ElMessage.success('登录成功')
       router.push('/')
     } else if (res.data?.code !== 200) {
       ElMessage.error(res.data?.message || '登录失败')
@@ -247,8 +271,12 @@ async function handlePhoneLogin() {
     })
 
     if (verifyRes.data?.success) {
-      ElMessage.success('登录成功')
-      router.push('/')
+      if (verifyRes.data?.token && verifyRes.data?.user) {
+        authStore.login(verifyRes.data.user, verifyRes.data.token)
+        router.push('/')
+      } else {
+        ElMessage.error('该手机号未注册，请先注册')
+      }
     } else {
       ElMessage.error(verifyRes.data?.message || '验证码错误')
     }

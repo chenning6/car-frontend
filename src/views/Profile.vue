@@ -26,10 +26,10 @@
         </div>
 
         <div class="button-group">
-          <el-button @click="showPasswordDialog = true">
+          <el-button type="primary" size="large" @click="showPasswordDialog = true" class="action-btn">
             {{ $t('changePassword') }}
           </el-button>
-          <el-button @click="showPhoneDialog = true">
+          <el-button size="large" @click="showPhoneDialog = true" class="action-btn">
             {{ $t('changePhone') }}
           </el-button>
         </div>
@@ -52,28 +52,31 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showPasswordDialog" :title="$t('changePassword')" width="400px">
-      <el-form :model="passwordForm" label-width="80px">
-        <el-form-item :label="$t('oldPassword')">
-          <el-input v-model="passwordForm.oldPassword" type="password" show-password />
-        </el-form-item>
-        <el-form-item :label="$t('newPassword')">
-          <el-input v-model="passwordForm.newPassword" type="password" show-password />
-        </el-form-item>
-        <el-form-item :label="$t('confirmPassword')">
-          <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
-        </el-form-item>
-      </el-form>
+    <el-dialog v-model="showPasswordDialog" :title="$t('changePassword')" class="profile-dialog" width="400px">
+      <div class="dialog-form">
+        <div class="form-row">
+          <span class="form-label">{{ $t('oldPassword') }}</span>
+          <el-input v-model="passwordForm.oldPassword" type="password" show-password size="large" />
+        </div>
+        <div class="form-row">
+          <span class="form-label">{{ $t('newPassword') }}</span>
+          <el-input v-model="passwordForm.newPassword" type="password" show-password size="large" />
+        </div>
+        <div class="form-row">
+          <span class="form-label">{{ $t('confirmPassword') }}</span>
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password size="large" />
+        </div>
+      </div>
       <template #footer>
         <el-button @click="showPasswordDialog = false">{{ $t('cancel') }}</el-button>
         <el-button type="primary" @click="changePassword" :loading="changingPwd">{{ $t('save') }}</el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showPhoneDialog" :title="$t('changePhone')" class="phone-dialog">
-      <el-form :model="phoneForm" label-width="80px">
-        <el-form-item :label="$t('countryCode')">
-          <el-select v-model="phoneForm.countryCode" filterable style="width: 100%">
+    <el-dialog v-model="showPhoneDialog" :title="$t('changePhone')" class="profile-dialog" width="400px">
+      <div class="dialog-form">
+        <div class="phone-row">
+          <el-select v-model="phoneForm.countryCode" filterable size="large" class="country-select">
             <el-option
               v-for="country in translatedCountries"
               :key="country.code"
@@ -81,23 +84,20 @@
               :value="country.code"
             />
           </el-select>
-        </el-form-item>
-        <el-form-item :label="$t('phone')">
-          <el-input v-model="phoneForm.phone" />
-        </el-form-item>
-        <el-form-item :label="$t('captcha')">
-          <div class="captcha-row">
-            <el-input v-model="phoneForm.code" style="flex: 1" />
-            <el-button
-              :disabled="countdown > 0"
-              @click="sendCaptcha"
-              class="send-btn"
-            >
-              {{ countdown > 0 ? `${countdown}s` : $t('captcha') }}
-            </el-button>
-          </div>
-        </el-form-item>
-      </el-form>
+          <el-input v-model="phoneForm.phone" :placeholder="$t('phoneNumber')" size="large" />
+        </div>
+        <div class="captcha-row">
+          <el-input v-model="phoneForm.code" :placeholder="$t('verificationCode')" size="large" />
+          <el-button
+            size="large"
+            :disabled="countdown > 0 || !phoneForm.phone"
+            @click="sendCaptcha"
+            class="send-btn"
+          >
+            {{ countdown > 0 ? `${countdown}s` : $t('getCode') }}
+          </el-button>
+        </div>
+      </div>
       <template #footer>
         <el-button @click="showPhoneDialog = false">{{ $t('cancel') }}</el-button>
         <el-button type="primary" @click="changePhone" :loading="changingPhone">{{ $t('save') }}</el-button>
@@ -391,6 +391,7 @@ onMounted(() => {
 .button-group {
   display: flex;
   gap: 12px;
+  width: 100%;
 }
 
 .button-group .el-button--primary {
@@ -401,6 +402,11 @@ onMounted(() => {
 
 .button-group .el-button {
   border-radius: 10px;
+}
+
+.action-btn {
+  flex: 1;
+  height: 44px;
 }
 
 .actions {
@@ -419,14 +425,67 @@ onMounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
   color: #fff;
+  border-radius: 10px;
+  min-width: 100px;
 }
 
 :deep(.el-input__wrapper) {
   border-radius: 10px;
 }
 
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.form-label {
+  min-width: 70px;
+  font-weight: 500;
+  color: #333;
+  flex-shrink: 0;
+}
+
+.phone-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.phone-row .country-select {
+  width: 130px;
+  flex-shrink: 0;
+}
+
+.captcha-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.captcha-row .el-input {
+  flex: 1;
+}
+
+.form-row .el-input,
+.form-row .el-select {
+  flex: 1;
+}
+
   :deep(.el-dialog) {
     border-radius: 16px;
+  }
+
+  :deep(.profile-dialog) {
+    .el-dialog__body {
+      padding: 20px;
+    }
   }
 
   :deep(.phone-dialog) {
@@ -471,57 +530,69 @@ onMounted(() => {
     text-align: left;
   }
 
-  :deep(.el-form) {
-    .el-form-item {
-      display: block;
-      margin-bottom: 16px;
-    }
-    .el-form-item__label {
-      float: none;
-      text-align: left;
-      margin-bottom: 8px;
-    }
-    .el-form-item__content {
-      margin-left: 0 !important;
-    }
-    .el-input__wrapper {
-      width: 100%;
-    }
-    .el-select {
-      width: 100%;
-    }
-  }
-
   .button-group {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 12px;
     width: 100%;
   }
 
   .button-group .el-button {
-    width: 100%;
+    flex: 1;
+  }
+
+  .action-btn {
+    height: 48px;
+    font-size: 15px;
   }
 
   :deep(.el-dialog) {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 90% !important;
     max-width: 400px;
-    margin: 0 auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 0;
   }
 
-  :deep(.el-dialog__body) {
-    padding: 16px;
+  :deep(.el-dialog__wrapper) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :deep(.profile-dialog) {
+    .el-dialog__body {
+      padding: 16px;
+    }
+  }
+
+  .dialog-form {
+    gap: 12px;
+  }
+
+  .phone-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .phone-row .country-select {
+    width: 100%;
+  }
+
+  .phone-row .el-input {
+    width: 100%;
   }
 
   .captcha-row {
     flex-direction: column;
-    width: 100%;
+    gap: 12px;
   }
 
-  .captcha-row .el-input {
-    width: 100%;
-  }
-
+  .captcha-row .el-input,
   .captcha-row .send-btn {
     width: 100%;
   }
