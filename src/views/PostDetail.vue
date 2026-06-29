@@ -39,9 +39,14 @@
         
         <div class="contact">
           <h3>{{ $t('contact') }}</h3>
-          <el-button type="primary" @click="handleViewContact">
-            {{ $t('viewContact') }}
-          </el-button>
+          <div class="contact-buttons">
+            <el-button type="primary" @click="handleViewContact">
+              {{ $t('viewContact') }}
+            </el-button>
+            <el-button @click="shareLink">
+              {{ $t('share') }}
+            </el-button>
+          </div>
         </div>
       </div>
       
@@ -51,7 +56,7 @@
           <div class="comment-item" v-for="comment in comments" :key="comment.id">
             <div class="comment-header">
               <span class="comment-user">{{ comment.username || '用户' + comment.userId }}</span>
-              <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
+              <span class="comment-time">{{ formatTime(comment.createdAt || comment.created_at) }}</span>
               <el-button 
                 v-if="comment.userId === currentUserId" 
                 type="danger" 
@@ -138,12 +143,16 @@ const commentContent = ref('')
 const currentUserId = computed(() => authStore.user?.id)
 
 function getImageUrl(url: string) {
-  if (!url) return '/placeholder.jpg'
-  return url
+  if (!url) return '/placeholder.svg'
+  if (url.startsWith('data:image/')) return url
+  if (url.startsWith('http')) return url
+  if (url.startsWith('/api/')) return url
+  if (url.startsWith('/uploads/')) return '/api/upload' + url
+  return '/api' + url
 }
 
 const currentImage = computed(() => {
-  if (allImages.value.length === 0) return '/placeholder.jpg'
+  if (allImages.value.length === 0) return '/placeholder.svg'
   return getImageUrl(allImages.value[currentIndex.value]?.imageUrl || allImages.value[currentIndex.value])
 })
 
@@ -156,16 +165,18 @@ function nextImage() {
 }
 
 function fixImage(e: Event) {
-  (e.target as HTMLImageElement).src = '/placeholder.jpg'
+  (e.target as HTMLImageElement).src = '/placeholder.svg'
 }
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat('mn-MN').format(price || 0)
 }
 
-function formatTime(time: string) {
+function formatTime(time: any) {
+  // Backend may return either createdAt (camel) or created_at (snake) depending on serialization.
   if (!time) return ''
-  const d = new Date(time)
+  const d = new Date(String(time))
+  if (Number.isNaN(d.getTime())) return ''
   return `${d.getMonth() + 1}-${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`
 }
 
@@ -177,12 +188,14 @@ async function loadPost() {
     if (res.data?.code === 200) {
       post.value = res.data.data
       images.value = res.data.data?.images || []
-      const imgList = res.data.data?.images || []
-      if (post.value.coverImage) {
-        allImages.value = [post.value.coverImage, ...imgList.map((i: any) => i.imageUrl)]
-      } else {
-        allImages.value = imgList.map((i: any) => i.imageUrl)
-      }
+      // 统一以 PostImage 列表为准；coverImage 字段仅用于列表页快速展示
+      const imgList = (res.data.data?.images || []).slice().sort(
+        (a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+      )
+      allImages.value = imgList.map((i: any) => ({
+        imageUrl: i.imageUrl,
+        isCover: i.isCover
+      }))
       await loadComments()
     }
   } catch (error) {
@@ -234,6 +247,25 @@ function handleViewContact() {
     return
   }
   showContact.value = true
+}
+
+function shareLink() {
+  const url = window.location.href
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      ElMessage.success(t('linkCopied'))
+    })
+  } else {
+    const textarea = document.createElement('textarea')
+    textarea.value = url
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textarea)
+    ElMessage.success(t('linkCopied'))
+  }
 }
 
 onMounted(() => {
@@ -365,6 +397,12 @@ onMounted(() => {
 
 .contact h3 {
   margin-bottom: 10px;
+}
+
+.contact-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .comments-section {

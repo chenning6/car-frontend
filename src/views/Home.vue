@@ -107,12 +107,24 @@ function formatPrice(price: number) {
 }
 
 function getImageUrl(url: string) {
-  if (!url) return '/placeholder.jpg'
-  return url
+  if (!url) return '/placeholder.svg'
+  // Captcha images etc may use data URLs.
+  if (url.startsWith('data:image/')) return url
+  if (url.startsWith('http')) return url
+
+  // Already an API path.
+  if (url.startsWith('/api/')) return url
+
+  // Backend UploadController is mounted at `/api/upload` and serves files at `/api/upload/uploads/{filename}`.
+  // But it returns URLs like `/uploads/{filename}`. Map them here.
+  if (url.startsWith('/uploads/')) return '/api/upload' + url
+
+  // Other backend URLs are typically already rooted under `/api/*`.
+  return '/api' + url
 }
 
 function fixImage(e: Event) {
-  (e.target as HTMLImageElement).src = '/placeholder.jpg'
+  (e.target as HTMLImageElement).src = '/placeholder.svg'
 }
 
 function goDetail(id: number) {

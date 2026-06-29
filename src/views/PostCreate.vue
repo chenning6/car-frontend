@@ -53,7 +53,7 @@
                 class="image-preview"
                 :class="{ 'is-cover': img.isCover }"
               >
-                <img :src="img.url" @click="previewImage(index)" @error="img.url = '/placeholder.jpg'" />
+                <img :src="getImageUrl(img.url)" @click="previewImage(index)" @error="img.url = '/placeholder.svg'" />
                 <div class="cover-tag" v-if="img.isCover">{{ $t('cover') }}</div>
                 <div class="image-actions">
                   <el-button size="small" :type="img.isCover ? 'success' : 'default'" @click.stop="setCover(index)">
@@ -71,9 +71,9 @@
               </div>
             </el-dialog>
             
-            <!-- 上传按钮：只在图片少于10张时显示 -->
+            <!-- 上传按钮：只在图片少于20张时显示 -->
             <el-upload
-              v-if="form.images.length < 10"
+              v-if="form.images.length < 20"
               ref="uploadRef"
               :action="uploadUrl"
               :auto-upload="true"
@@ -82,13 +82,20 @@
               :on-success="handleUploadSuccess"
               :on-error="handleUploadError"
               :before-upload="beforeUpload"
+              :http-request="customUpload"
               accept="image/jpeg,image/png,image/gif,image/webp"
               list-type="picture-card">
               <el-icon><Plus /></el-icon>
             </el-upload>
-            
+
             <div class="upload-tip" v-if="form.images.length === 0">
               {{ $t('selectImagesTip') }}
+            </div>
+            <div class="upload-tip" v-else-if="form.images.length < 20">
+              已上传 {{ form.images.length }} / 20 张
+            </div>
+            <div class="upload-tip" v-else>
+              已达到 20 张上限
             </div>
           </div>
         </el-form-item>
@@ -112,6 +119,8 @@ import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
+import axios from 'axios'
+import imageCompression from 'browser-image-compression'
 import { postApi } from '@/api'
 
 const { t } = useI18n()
@@ -150,12 +159,48 @@ const form = reactive({
   images: [] as UploadImage[],
 })
 
-function beforeUpload(file: any) {
+async function beforeUpload(file: any) {
   const isImage = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
-  const isLt10M = file.size / 1024 / 1024 < 10
-  if (!isImage) ElMessage.error('只能上传JPG/PNG/GIF/WEBP图片')
-  if (!isLt10M) ElMessage.error('图片大小不能超过10MB')
-  return isImage && isLt10M
+  if (!isImage) {
+    ElMessage.error('只能上传JPG/PNG/GIF/WEBP图片')
+    return false
+  }
+  if (file.size / 1024 / 1024 > 20) {
+    ElMessage.error('原图不能超过 20MB')
+    return false
+  }
+  try {
+    if (file.type !== 'image/gif' && file.size / 1024 > 500) {
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: file.type === 'image/png' ? 'image/webp' : file.type,
+        initialQuality: 0.82,
+      })
+      ;(file as any)._compressed = compressed
+    }
+  } catch (e) {
+    console.warn('前端压缩失败，上传原图:', e)
+  }
+  return true
+}
+
+async function customUpload(option: any) {
+  const realFile: File = option.file._compressed ?? option.file
+  const fd = new FormData()
+  fd.append('file', realFile, option.file.name)
+  try {
+    const res = await axios.post(option.action, fd, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        Authorization: authStore.token ? `Bearer ${authStore.token}` : '',
+      },
+    })
+    option.onSuccess(res.data, option.file)
+  } catch (e: any) {
+    option.onError(e, option.file)
+  }
 }
 
 function handleFileChange(file: any, fileList: any[]) {
@@ -167,9 +212,8 @@ function handleUploadSuccess(response: any, file: any) {
   try {
     let data = typeof response === 'string' ? JSON.parse(response) : response
     if (data.code === 200 && data.data) {
-      const fullUrl = getImageUrl(data.data.url)
       form.images.push({
-        url: fullUrl,
+        url: data.data.url,
         filename: data.data.filename,
         isCover: form.images.length === 0,
       })
@@ -190,7 +234,7 @@ function setCover(index: number) {
 }
 
 function previewImage(index: number) {
-  previewUrl.value = form.images[index].url
+  previewUrl.value = getImageUrl(form.images[index].url)
   showPreview.value = true
 }
 
@@ -220,11 +264,20 @@ async function loadPost(id: number) {
       form.contactPhone = data.contactPhone || ''
       
       if (data.images && data.images.length > 0) {
-        form.images = data.images.map((img: any) => ({
-          url: getImageUrl(img.imageUrl),
-          filename: img.imageUrl?.split('/').pop() || '',
-          isCover: img.isCover || false,
-        }))
+        form.images = data.images.map((img: any) => {
+          let rawUrl = img.imageUrl || ''
+          if (rawUrl.startsWith('http')) {
+            rawUrl = rawUrl.replace(/^https?:\/\/[^\/]+/, '')
+          }
+          if (rawUrl.startsWith('/api/upload/uploads/')) {
+            rawUrl = rawUrl.replace('/api/upload', '')
+          }
+          return {
+            url: rawUrl,
+            filename: rawUrl.split('/').pop() || '',
+            isCover: img.isCover || false,
+          }
+        })
       }
     }
   } catch (error) {
@@ -233,8 +286,11 @@ async function loadPost(id: number) {
 }
 
 function getImageUrl(url: string) {
-  if (!url) return '/placeholder.jpg'
+  if (!url) return '/placeholder.svg'
   if (url.startsWith('http')) return url
+  if (url.startsWith('data:image/')) return url
+  if (url.startsWith('/api/')) return url
+  if (url.startsWith('/uploads/')) return '/api/upload' + url
   return '/api' + url
 }
 

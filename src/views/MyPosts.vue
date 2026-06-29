@@ -121,12 +121,16 @@ function formatPrice(price: number) {
 }
 
 function getImageUrl(url: string) {
-  if (!url) return '/placeholder.jpg'
-  return url
+  if (!url) return '/placeholder.svg'
+  if (url.startsWith('data:image/')) return url
+  if (url.startsWith('http')) return url
+  if (url.startsWith('/api/')) return url
+  if (url.startsWith('/uploads/')) return '/api/upload' + url
+  return '/api' + url
 }
 
 function fixImage(e: Event) {
-  (e.target as HTMLImageElement).src = '/placeholder.jpg'
+  (e.target as HTMLImageElement).src = '/placeholder.svg'
 }
 
 function viewDetail(id: number) {
